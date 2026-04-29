@@ -16,6 +16,7 @@ import com.easypan.entity.vo.PaginationResultVO;
 import com.easypan.exception.BusinessException;
 import com.easypan.mappers.FileInfoMapper;
 import com.easypan.mappers.UserInfoMapper;
+import com.easypan.service.AiFileService;
 import com.easypan.service.FileInfoService;
 import com.easypan.utils.DateUtil;
 import com.easypan.utils.ProcessUtils;
@@ -65,6 +66,9 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Resource
     private RedisComponent redisComponent;
+
+    @Resource
+    private AiFileService aiFileService;
 
 
     /**
@@ -195,6 +199,14 @@ public class FileInfoServiceImpl implements FileInfoService {
                     resultDto.setStatus(UploadStatusEnums.UPLOAD_SECONDS.getCode());
                     //更新用户空间使用
                     updateUserSpace(webUserDto, dbFile.getFileSize());
+                    final String finalFileId = fileId;
+                    final String finalUserId = webUserDto.getUserId();
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            aiFileService.asyncParseFile(finalFileId, finalUserId);
+                        }
+                    });
 
                     return resultDto;
                 }
@@ -362,6 +374,9 @@ public class FileInfoServiceImpl implements FileInfoService {
             updateInfo.setFileCover(cover);
             updateInfo.setStatus(transferSuccess ? FileStatusEnums.USING.getStatus() : FileStatusEnums.TRANSFER_FAIL.getStatus());
             fileInfoMapper.updateFileStatusWithOldStatus(fileId, webUserDto.getUserId(), updateInfo, FileStatusEnums.TRANSFER.getStatus());
+            if (transferSuccess) {
+                aiFileService.asyncParseFile(fileId, webUserDto.getUserId());
+            }
         }
     }
 
