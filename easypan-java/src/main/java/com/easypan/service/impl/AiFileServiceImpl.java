@@ -42,6 +42,9 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,8 +54,13 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Base64;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 @Service("aiFileService")
 public class AiFileServiceImpl implements AiFileService {
@@ -66,6 +74,7 @@ public class AiFileServiceImpl implements AiFileService {
     private static final int CHUNK_MAX_LENGTH = 500;
     private static final int CHUNK_OVERLAP = 80;
     private static final int LLM_INPUT_MAX_LENGTH = 7000;
+    private static final double SEARCH_MIN_SCORE = 0.15D;
     private static final String DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
 
     private static final Set<String> STOP_WORDS = new HashSet<String>(Arrays.asList(
@@ -126,7 +135,8 @@ public class AiFileServiceImpl implements AiFileService {
         if (isAiDisabled()) {
             return emptyPage(pageNo, pageSize);
         }
-        List<String> queryTokens = tokenize(keyword);
+        String normalizedQuery = normalizeQuery(keyword);
+        List<String> queryTokens = tokenize(normalizedQuery);
         if (queryTokens.isEmpty()) {
             return emptyPage(pageNo, pageSize);
         }
@@ -143,13 +153,17 @@ public class AiFileServiceImpl implements AiFileService {
                 continue;
             }
             double score = cosineSimilarity(queryFreq, buildTokenFreqMap(tokens));
-            if (score <= 0D) {
+            String chunkText = StringUtils.defaultString(chunk.getChunkText()).toLowerCase();
+            if (!StringTools.isEmpty(normalizedQuery) && chunkText.contains(normalizedQuery)) {
+                score += 0.8D;
+            }
+            if (score < SEARCH_MIN_SCORE) {
                 continue;
             }
             String key = chunk.getFileId();
             ScoredSnippet old = bestByFile.get(key);
             if (old == null || score > old.score) {
-                bestByFile.put(key, new ScoredSnippet(score, buildSnippet(chunk.getChunkText(), queryTokens)));
+                bestByFile.put(key, new ScoredSnippet(score, buildSnippet(chunk.getChunkText(), queryTokens, normalizedQuery)));
             }
         }
         if (bestByFile.isEmpty()) {
@@ -178,8 +192,14 @@ public class AiFileServiceImpl implements AiFileService {
             }
             AiFileIndex index = indexMap.get(fileInfo.getFileId());
             double rerank = scored.score + 0.2D * tokenOverlapScore(queryTokens, tokenize(fileInfo.getFileName()));
+            if (!StringTools.isEmpty(normalizedQuery) && StringUtils.defaultString(fileInfo.getFileName()).toLowerCase().contains(normalizedQuery)) {
+                rerank += 0.5D;
+            }
             if (index != null) {
                 rerank += 0.1D * tokenOverlapScore(queryTokens, tokenize(index.getTags()));
+                if (!StringTools.isEmpty(normalizedQuery) && StringUtils.defaultString(index.getSummary()).toLowerCase().contains(normalizedQuery)) {
+                    rerank += 0.4D;
+                }
             }
             AiSearchResultVO vo = new AiSearchResultVO();
             vo.setFileId(fileInfo.getFileId());
@@ -313,11 +333,13 @@ public class AiFileServiceImpl implements AiFileService {
             try {
                 response = client.newCall(request).execute();
                 if (!response.isSuccessful() || response.body() == null) {
+                    logger.warn("DeepSeek响应异常, httpCode:{}", response == null ? -1 : response.code());
                     return null;
                 }
                 JSONObject root = JSONObject.parseObject(response.body().string());
                 JSONArray choices = root.getJSONArray("choices");
                 if (choices == null || choices.isEmpty()) {
+                    logger.warn("DeepSeek返回choices为空");
                     return null;
                 }
                 String text = choices.getJSONObject(0).getJSONObject("message").getString("content");
@@ -340,6 +362,7 @@ public class AiFileServiceImpl implements AiFileService {
                 } else {
                     result.tags = StringUtils.substring(StringUtils.defaultString(json.getString("tags")), 0, 200);
                 }
+                logger.info("DeepSeek调用成功, model:{}", model);
                 return result;
             } finally {
                 if (response != null && response.body() != null) {
@@ -393,7 +416,8 @@ public class AiFileServiceImpl implements AiFileService {
         return FileTypeEnums.PDF.getType().equals(fileType)
                 || FileTypeEnums.WORD.getType().equals(fileType)
                 || FileTypeEnums.TXT.getType().equals(fileType)
-                || FileTypeEnums.PROGRAME.getType().equals(fileType);
+                || FileTypeEnums.PROGRAME.getType().equals(fileType)
+                || FileTypeEnums.IMAGE.getType().equals(fileType);
     }
 
     private String extractText(File file, Integer fileType) throws Exception {
@@ -408,6 +432,9 @@ public class AiFileServiceImpl implements AiFileService {
         }
         if (FileTypeEnums.WORD.getType().equals(fileType)) {
             return readDocx(file);
+        }
+        if (FileTypeEnums.IMAGE.getType().equals(fileType)) {
+            return readImageByOcr(file);
         }
         return "";
     }
@@ -435,8 +462,148 @@ public class AiFileServiceImpl implements AiFileService {
         }
     }
 
+    private String readImageByOcr(File file) {
+        String appId = appConfig.getXfyunOcrAppId();
+        String apiKey = appConfig.getXfyunOcrApiKey();
+        String apiSecret = appConfig.getXfyunOcrApiSecret();
+        String ocrUrl = appConfig.getXfyunOcrUrl();
+        if (StringTools.isEmpty(appId) || StringTools.isEmpty(apiKey) || StringTools.isEmpty(apiSecret) || StringTools.isEmpty(ocrUrl)) {
+            logger.info("讯飞OCR未配置，跳过图片OCR");
+            return "";
+        }
+        try {
+            String host = "api.xf-yun.com";
+            String path = "/v1/private/sf8e6aca1";
+            String date = buildRfc1123Date();
+            String requestLine = "POST " + path + " HTTP/1.1";
+            String signatureOrigin = "host: " + host + "\n" + "date: " + date + "\n" + requestLine;
+            String signature = hmacSha256Base64(signatureOrigin, apiSecret);
+            String authorizationOrigin = "api_key=\"" + apiKey + "\", algorithm=\"hmac-sha256\", headers=\"host date request-line\", signature=\"" + signature + "\"";
+            String authorization = Base64.getEncoder().encodeToString(authorizationOrigin.getBytes(StandardCharsets.UTF_8));
+            String url = ocrUrl + "?authorization=" + URLEncoder.encode(authorization, "UTF-8")
+                    + "&host=" + URLEncoder.encode(host, "UTF-8")
+                    + "&date=" + URLEncoder.encode(date, "UTF-8");
+
+            byte[] bytes = FileUtils.readFileToByteArray(file);
+            String imageBase64 = Base64.getEncoder().encodeToString(bytes);
+            String ext = StringUtils.substringAfterLast(file.getName().toLowerCase(), ".");
+            if (StringTools.isEmpty(ext)) {
+                ext = "jpg";
+            }
+
+            JSONObject requestBody = new JSONObject();
+            JSONObject header = new JSONObject();
+            header.put("app_id", appId);
+            header.put("status", 3);
+            requestBody.put("header", header);
+
+            JSONObject parameter = new JSONObject();
+            JSONObject svc = new JSONObject();
+            svc.put("category", "ch_en_public_cloud");
+            JSONObject result = new JSONObject();
+            result.put("encoding", "utf8");
+            result.put("compress", "raw");
+            result.put("format", "json");
+            svc.put("result", result);
+            parameter.put("sf8e6aca1", svc);
+            requestBody.put("parameter", parameter);
+
+            JSONObject payload = new JSONObject();
+            JSONObject imageData = new JSONObject();
+            imageData.put("encoding", ext);
+            imageData.put("status", 3);
+            imageData.put("image", imageBase64);
+            payload.put("sf8e6aca1_data_1", imageData);
+            requestBody.put("payload", payload);
+
+            OkHttpClient client = new OkHttpClient.Builder().build();
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody.toJSONString());
+            Request request = new Request.Builder().url(url).post(body).build();
+            Response response = null;
+            try {
+                response = client.newCall(request).execute();
+                if (!response.isSuccessful() || response.body() == null) {
+                    logger.warn("讯飞OCR请求失败, code:{}", response == null ? -1 : response.code());
+                    return "";
+                }
+                JSONObject root = JSONObject.parseObject(response.body().string());
+                JSONObject rootHeader = root.getJSONObject("header");
+                if (rootHeader == null || rootHeader.getIntValue("code") != 0) {
+                    logger.warn("讯飞OCR返回异常:{}", rootHeader == null ? "null" : rootHeader.toJSONString());
+                    return "";
+                }
+                String textBase64 = root.getJSONObject("payload").getJSONObject("result").getString("text");
+                if (StringTools.isEmpty(textBase64)) {
+                    return "";
+                }
+                String decodedText = new String(Base64.getDecoder().decode(textBase64), StandardCharsets.UTF_8);
+                return extractOcrText(decodedText);
+            } finally {
+                if (response != null && response.body() != null) {
+                    response.body().close();
+                }
+            }
+        } catch (Exception e) {
+            logger.error("讯飞OCR调用失败", e);
+            return "";
+        }
+    }
+
+    private String extractOcrText(String jsonText) {
+        try {
+            JSONObject jsonObject = JSONObject.parseObject(jsonText);
+            JSONArray pages = jsonObject.getJSONArray("pages");
+            if (pages == null || pages.isEmpty()) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < pages.size(); i++) {
+                JSONObject page = pages.getJSONObject(i);
+                JSONArray lines = page.getJSONArray("lines");
+                if (lines == null) {
+                    continue;
+                }
+                for (int j = 0; j < lines.size(); j++) {
+                    JSONObject line = lines.getJSONObject(j);
+                    JSONArray words = line.getJSONArray("words");
+                    if (words == null) {
+                        continue;
+                    }
+                    for (int k = 0; k < words.size(); k++) {
+                        String content = words.getJSONObject(k).getString("content");
+                        if (!StringTools.isEmpty(content)) {
+                            sb.append(content).append(" ");
+                        }
+                    }
+                }
+            }
+            return sb.toString().trim();
+        } catch (Exception e) {
+            logger.error("解析OCR结果失败", e);
+            return "";
+        }
+    }
+
     private String normalizeText(String text) {
         return StringUtils.normalizeSpace(StringUtils.defaultString(text).replace("\u0000", " "));
+    }
+
+    private String normalizeQuery(String keyword) {
+        return StringUtils.defaultString(keyword).trim().toLowerCase();
+    }
+
+    private String buildRfc1123Date() {
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return sdf.format(new Date());
+    }
+
+    private String hmacSha256Base64(String data, String secret) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        mac.init(secretKeySpec);
+        byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(digest);
     }
 
     private List<String> splitChunks(String content) {
@@ -486,10 +653,18 @@ public class AiFileServiceImpl implements AiFileService {
                 continue;
             }
             if (word.matches("[\\u4e00-\\u9fa5]+")) {
-                for (int i = 0; i < word.length(); i++) {
-                    tokens.add(String.valueOf(word.charAt(i)));
+                if (word.length() >= 2) {
+                    tokens.add(word);
+                    for (int i = 0; i < word.length() - 1; i++) {
+                        tokens.add(word.substring(i, i + 2));
+                    }
+                } else {
+                    tokens.add(word);
                 }
             } else {
+                if (word.length() < 2) {
+                    continue;
+                }
                 tokens.add(word);
             }
         }
@@ -542,17 +717,26 @@ public class AiFileServiceImpl implements AiFileService {
         return (double) hit / (double) querySet.size();
     }
 
-    private String buildSnippet(String chunkText, List<String> queryTokens) {
+    private String buildSnippet(String chunkText, List<String> queryTokens, String queryText) {
         if (StringTools.isEmpty(chunkText)) {
             return "";
         }
         String lower = chunkText.toLowerCase();
-        int start = 0;
-        for (String token : queryTokens) {
-            int idx = lower.indexOf(token.toLowerCase());
+        int start = -1;
+        if (!StringTools.isEmpty(queryText)) {
+            int idx = lower.indexOf(queryText.toLowerCase());
             if (idx >= 0) {
-                start = Math.max(0, idx - 20);
-                break;
+                start = Math.max(0, idx - 25);
+            }
+        }
+        if (start < 0) {
+            start = 0;
+            for (String token : queryTokens) {
+                int idx = lower.indexOf(token.toLowerCase());
+                if (idx >= 0) {
+                    start = Math.max(0, idx - 20);
+                    break;
+                }
             }
         }
         int end = Math.min(chunkText.length(), start + 120);

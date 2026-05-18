@@ -59,6 +59,18 @@ public class AppConfig {
     @Value("${qq.url.redirect:}")
     private String qqUrlRedirect;
 
+    @Value("${xfyun.ocr.url:https://api.xf-yun.com/v1/private/sf8e6aca1}")
+    private String xfyunOcrUrl;
+
+    @Value("${xfyun.ocr.appid:}")
+    private String xfyunOcrAppId;
+
+    @Value("${xfyun.ocr.apikey:}")
+    private String xfyunOcrApiKey;
+
+    @Value("${xfyun.ocr.apisecret:}")
+    private String xfyunOcrApiSecret;
+
 
     public String getProjectFolder() {
         if (!StringTools.isEmpty(projectFolder) && !projectFolder.endsWith("/")) {
@@ -105,5 +117,21 @@ public class AppConfig {
 
     public String getQqUrlRedirect() {
         return qqUrlRedirect;
+    }
+
+    public String getXfyunOcrUrl() {
+        return xfyunOcrUrl;
+    }
+
+    public String getXfyunOcrAppId() {
+        return xfyunOcrAppId;
+    }
+
+    public String getXfyunOcrApiKey() {
+        return xfyunOcrApiKey;
+    }
+
+    public String getXfyunOcrApiSecret() {
+        return xfyunOcrApiSecret;
     }
 }
