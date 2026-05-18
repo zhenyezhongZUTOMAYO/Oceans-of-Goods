@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.servlet.MultipartConfigElement;
+import java.io.File;
 
 
 @EnableAsync
@@ -32,7 +33,11 @@ public class EasyPanApplication {
     MultipartConfigElement multipartConfigElement() {
         AppConfig appConfig = (AppConfig) ApplicationContextProvider.getBean("appConfig");
         MultipartConfigFactory factory = new MultipartConfigFactory();
-        factory.setLocation(appConfig.getProjectFolder() + Constants.FILE_FOLDER_TEMP);
+        File tempDir = new File(appConfig.getProjectFolder() + Constants.FILE_FOLDER_TEMP).getAbsoluteFile();
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        factory.setLocation(tempDir.getAbsolutePath());
         return factory.createMultipartConfig();
     }
 }

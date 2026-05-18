@@ -208,7 +208,7 @@ public class FileInfoServiceImpl implements FileInfoService {
             String tempFolderName = appConfig.getProjectFolder() + Constants.FILE_FOLDER_TEMP;
             String currentUserFolderName = webUserDto.getUserId() + fileId;
             //创建临时目录
-            tempFileFolder = new File(tempFolderName + currentUserFolderName);
+            tempFileFolder = new File(tempFolderName + currentUserFolderName).getAbsoluteFile();
             if (!tempFileFolder.exists()) {
                 tempFileFolder.mkdirs();
             }
@@ -219,7 +219,10 @@ public class FileInfoServiceImpl implements FileInfoService {
                 throw new BusinessException(ResponseCodeEnum.CODE_904);
             }
 
-            File newFile = new File(tempFileFolder.getPath() + "/" + chunkIndex);
+            File newFile = new File(tempFileFolder, String.valueOf(chunkIndex)).getAbsoluteFile();
+            if (!newFile.getParentFile().exists()) {
+                newFile.getParentFile().mkdirs();
+            }
             file.transferTo(newFile);
             //保存临时大小
             redisComponent.saveFileTempSize(webUserDto.getUserId(), fileId, file.getSize());
