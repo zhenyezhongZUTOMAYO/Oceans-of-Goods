@@ -311,7 +311,7 @@ public class FileInfoServiceImpl implements FileInfoService {
         return fileName;
     }
 
-    @Async
+    @Async("applicationTaskExecutor")
     public void transferFile(String fileId, SessionWebUserDto webUserDto) {
         Boolean transferSuccess = true;
         String targetFilePath = null;

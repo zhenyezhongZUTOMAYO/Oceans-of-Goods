@@ -95,7 +95,7 @@ public class AiFileServiceImpl implements AiFileService {
     private RedisComponent redisComponent;
 
     @Override
-    @Async
+    @Async("applicationTaskExecutor")
     public void asyncParseFile(String fileId, String userId) {
         try {
             parseFile(fileId, userId);
@@ -480,10 +480,10 @@ public class AiFileServiceImpl implements AiFileService {
     }
 
     private String readImageByOcr(File file) {
-        String appId = appConfig.getXfyunOcrAppId();
-        String apiKey = appConfig.getXfyunOcrApiKey();
-        String apiSecret = appConfig.getXfyunOcrApiSecret();
-        String ocrUrl = appConfig.getXfyunOcrUrl();
+        String appId = StringUtils.trimToEmpty(appConfig.getXfyunOcrAppId());
+        String apiKey = StringUtils.trimToEmpty(appConfig.getXfyunOcrApiKey());
+        String apiSecret = StringUtils.trimToEmpty(appConfig.getXfyunOcrApiSecret());
+        String ocrUrl = StringUtils.trimToEmpty(appConfig.getXfyunOcrUrl());
         if (StringTools.isEmpty(appId) || StringTools.isEmpty(apiKey) || StringTools.isEmpty(apiSecret) || StringTools.isEmpty(ocrUrl)) {
             logger.info("讯飞OCR未配置，跳过图片OCR");
             return "";
@@ -551,9 +551,7 @@ public class AiFileServiceImpl implements AiFileService {
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody.toJSONString());
             Request request = new Request.Builder()
                     .url(url)
-                    .addHeader("Host", host)
-                    .addHeader("Date", date)
-                    .addHeader("Authorization", authorization)
+                    .addHeader("Content-Type", "application/json")
                     .post(body)
                     .build();
             Response response = null;
