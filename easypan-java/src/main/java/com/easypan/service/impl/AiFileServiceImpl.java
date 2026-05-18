@@ -237,6 +237,7 @@ public class AiFileServiceImpl implements AiFileService {
         String tags = buildTags(content + " " + fileInfo.getFileName());
         LlmSummaryResult llmSummaryResult = generateByDeepSeek(content, fileInfo.getFileName(), settings);
         String parseError = null;
+        String modelName = "local-fallback";
         if (llmSummaryResult != null) {
             if (!StringTools.isEmpty(llmSummaryResult.summary)) {
                 summary = llmSummaryResult.summary;
@@ -244,8 +245,13 @@ public class AiFileServiceImpl implements AiFileService {
             if (!StringTools.isEmpty(llmSummaryResult.tags)) {
                 tags = llmSummaryResult.tags;
             }
+            modelName = StringTools.isEmpty(settings.getAiModel()) ? "deepseek-v4-flash" : settings.getAiModel();
         } else {
-            parseError = "DeepSeek调用失败，已使用本地摘要";
+            if (StringTools.isEmpty(settings.getAiApiKey())) {
+                parseError = "未配置AI Key，已使用本地摘要";
+            } else {
+                parseError = "DeepSeek调用失败，已使用本地摘要";
+            }
         }
 
         aiFileChunkMapper.deleteByFileIdAndUserId(fileId, userId);
@@ -267,7 +273,7 @@ public class AiFileServiceImpl implements AiFileService {
         success.setParseStatus(PARSE_STATUS_SUCCESS);
         success.setSummary(summary);
         success.setTags(tags);
-        success.setModelName(settings.getAiModel());
+        success.setModelName(modelName);
         success.setParseError(parseError);
         success.setChunkCount(list.size());
         success.setCreateTime(now);
