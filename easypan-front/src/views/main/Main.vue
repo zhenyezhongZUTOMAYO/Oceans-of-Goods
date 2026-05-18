@@ -122,7 +122,14 @@
               ></span>
             </div>
             <span class="op">
-              <template v-if="row.showOp && row.fileId && row.status == 2">
+              <template v-if="row.showOp && row.fileId">
+                <span
+                  class="iconfont"
+                  @click="locateFile(row)"
+                  v-if="aiSearch"
+                  >定位</span
+                >
+                <template v-if="row.status == 2">
                 <span class="iconfont icon-share1" @click="share(row)"
                   >分享</span
                 >
@@ -143,6 +150,7 @@
                 <span class="iconfont icon-move" @click="moveFolder(row)"
                   >移动</span
                 >
+                </template>
               </template>
             </span>
           </div>
@@ -521,6 +529,26 @@ const preview = (data) => {
     return;
   }
   previewRef.value.showPreview(data, 0);
+};
+
+const locateFile = (data) => {
+  aiSearch.value = false;
+  fileNameFuzzy.value = "";
+  const filePid = data.filePid;
+  if (!filePid || filePid === "0" || filePid === 0) {
+    router.push({
+      path: route.path,
+      query: {},
+    });
+  } else {
+    router.push({
+      path: route.path,
+      query: {
+        path: filePid,
+      },
+    });
+  }
+  proxy.Message.success("已定位到文件所在目录");
 };
 
 //目录

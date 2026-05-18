@@ -77,9 +77,11 @@ const router = useRouter();
 const route = useRoute();
 
 const imageUrl = computed(() => {
-  return (
-    proxy.globalInfo.imageUrl + fileInfo.value.fileCover.replaceAll("_.", ".")
-  );
+  const cover = fileInfo.value.fileCover;
+  if (cover) {
+    return proxy.globalInfo.imageUrl + cover.replaceAll("_.", ".");
+  }
+  return FILE_URL_MAP[showPartRef.value || 0].fileUrl + "/" + fileInfo.value.fileId;
 });
 
 const windowShow = ref(false);
