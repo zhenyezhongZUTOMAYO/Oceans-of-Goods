@@ -9,7 +9,7 @@ public enum FileTypeEnums {
     MUSIC(FileCategoryEnums.MUSIC, 2, new String[]{".mp3", ".wav", ".wma", ".mp2", ".flac", ".midi", ".ra", ".ape", ".aac", ".cda"}, "音频"),
     IMAGE(FileCategoryEnums.IMAGE, 3, new String[]{".jpeg", ".jpg", ".png", ".gif", ".bmp", ".dds", ".psd", ".pdt", ".webp", ".xmp", ".svg", ".tiff"}, "图片"),
     PDF(FileCategoryEnums.DOC, 4, new String[]{".pdf"}, "pdf"),
-    WORD(FileCategoryEnums.DOC, 5, new String[]{".docx"}, "word"),
+    WORD(FileCategoryEnums.DOC, 5, new String[]{".docx", ".doc"}, "word"),
     EXCEL(FileCategoryEnums.DOC, 6, new String[]{".xlsx"}, "excel"),
     TXT(FileCategoryEnums.DOC, 7, new String[]{".txt"}, "txt文本"),
     PROGRAME(FileCategoryEnums.OTHERS, 8, new String[]{".h", ".c", ".hpp", ".hxx", ".cpp", ".cc", ".c++", ".cxx", ".m", ".o", ".s", ".dll", ".cs",

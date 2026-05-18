@@ -28,6 +28,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -453,7 +455,7 @@ public class AiFileServiceImpl implements AiFileService {
             return readPdf(file);
         }
         if (FileTypeEnums.WORD.getType().equals(fileType)) {
-            return readDocx(file);
+            return readWord(file);
         }
         if (FileTypeEnums.IMAGE.getType().equals(fileType)) {
             return readImageByOcr(file);
@@ -476,10 +478,26 @@ public class AiFileServiceImpl implements AiFileService {
         }
     }
 
+    private String readWord(File file) throws IOException {
+        String suffix = StringUtils.substringAfterLast(StringUtils.defaultString(file.getName()).toLowerCase(), ".");
+        if ("doc".equals(suffix)) {
+            return readDoc(file);
+        }
+        return readDocx(file);
+    }
+
     private String readDocx(File file) throws IOException {
         try (FileInputStream fis = new FileInputStream(file);
              XWPFDocument doc = new XWPFDocument(fis);
              XWPFWordExtractor extractor = new XWPFWordExtractor(doc)) {
+            return extractor.getText();
+        }
+    }
+
+    private String readDoc(File file) throws IOException {
+        try (FileInputStream fis = new FileInputStream(file);
+             HWPFDocument doc = new HWPFDocument(fis);
+             WordExtractor extractor = new WordExtractor(doc)) {
             return extractor.getText();
         }
     }
