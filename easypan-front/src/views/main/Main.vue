@@ -536,7 +536,9 @@ const locateFile = (data) => {
   fileNameFuzzy.value = "";
   const filePid = data.filePid;
   if (!filePid || filePid === "0" || filePid === 0) {
-    router.push({
+    // 同路由下 push 可能被忽略，主动重置导航并刷新列表
+    navigationRef.value.init();
+    router.replace({
       path: route.path,
       query: {},
     });
