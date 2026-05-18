@@ -42,6 +42,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -245,9 +246,26 @@ public class AiFileServiceImpl implements AiFileService {
         aiFileIndexMapper.insertOrUpdate(processing);
 
         String fullPath = appConfig.getProjectFolder() + Constants.FILE_FOLDER_FILE + fileInfo.getFilePath();
-        String content = normalizeText(extractText(new File(fullPath), fileInfo.getFileType()));
+        String parseError = null;
+        String content;
+        try {
+            content = normalizeText(extractText(new File(fullPath), fileInfo.getFileType()));
+        } catch (Exception e) {
+            if (FileTypeEnums.IMAGE.getType().equals(fileInfo.getFileType())) {
+                logger.warn("图片OCR异常, fileId:{}, name:{}, msg:{}", fileId, fileInfo.getFileName(), e.getMessage());
+                content = "";
+                parseError = "图片OCR失败:" + StringUtils.substring(StringUtils.defaultString(e.getMessage()), 0, 120);
+            } else {
+                throw e;
+            }
+        }
         if (StringTools.isEmpty(content)) {
-            throw new RuntimeException("文档内容为空");
+            if (FileTypeEnums.IMAGE.getType().equals(fileInfo.getFileType())) {
+                content = "图片文件 " + fileInfo.getFileName();
+                parseError = mergeParseError(parseError, "图片未识别到可用文字");
+            } else {
+                throw new RuntimeException("文档内容为空");
+            }
         }
         List<String> chunks = splitChunks(content);
         if (chunks.isEmpty()) {
@@ -256,7 +274,6 @@ public class AiFileServiceImpl implements AiFileService {
         String summary = buildSummary(content);
         String tags = buildTags(content + " " + fileInfo.getFileName());
         LlmSummaryResult llmSummaryResult = generateByDeepSeek(content, fileInfo.getFileName(), settings);
-        String parseError = null;
         String modelName = "local-fallback";
         if (llmSummaryResult != null) {
             if (!StringTools.isEmpty(llmSummaryResult.summary)) {
@@ -268,9 +285,9 @@ public class AiFileServiceImpl implements AiFileService {
             modelName = StringTools.isEmpty(settings.getAiModel()) ? "deepseek-v4-flash" : settings.getAiModel();
         } else {
             if (StringTools.isEmpty(settings.getAiApiKey())) {
-                parseError = "未配置AI Key，已使用本地摘要";
+                parseError = mergeParseError(parseError, "未配置AI Key，已使用本地摘要");
             } else {
-                parseError = "DeepSeek调用失败，已使用本地摘要";
+                parseError = mergeParseError(parseError, "DeepSeek调用失败，已使用本地摘要");
             }
         }
 
@@ -472,8 +489,13 @@ public class AiFileServiceImpl implements AiFileService {
             return "";
         }
         try {
-            String host = "api.xf-yun.com";
-            String path = "/v1/private/sf8e6aca1";
+            URI uri = URI.create(ocrUrl);
+            String host = uri.getHost();
+            String path = uri.getRawPath();
+            if (StringTools.isEmpty(host) || StringTools.isEmpty(path)) {
+                logger.warn("讯飞OCR地址配置非法:{}", ocrUrl);
+                return "";
+            }
             String date = buildRfc1123Date();
             String requestLine = "POST " + path + " HTTP/1.1";
             String signatureOrigin = "host: " + host + "\n" + "date: " + date + "\n" + requestLine;
@@ -486,9 +508,18 @@ public class AiFileServiceImpl implements AiFileService {
 
             byte[] bytes = FileUtils.readFileToByteArray(file);
             String imageBase64 = Base64.getEncoder().encodeToString(bytes);
+            if (imageBase64.length() > 4 * 1024 * 1024) {
+                logger.warn("讯飞OCR图片过大(base64>4MB), file:{}", file.getName());
+                return "";
+            }
             String ext = StringUtils.substringAfterLast(file.getName().toLowerCase(), ".");
             if (StringTools.isEmpty(ext)) {
                 ext = "jpg";
+            }
+            List<String> support = Arrays.asList("jpg", "jpeg", "png", "bmp");
+            if (!support.contains(ext)) {
+                logger.warn("讯飞OCR不支持图片格式:{}, file:{}", ext, file.getName());
+                return "";
             }
 
             JSONObject requestBody = new JSONObject();
@@ -518,12 +549,19 @@ public class AiFileServiceImpl implements AiFileService {
 
             OkHttpClient client = new OkHttpClient.Builder().build();
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody.toJSONString());
-            Request request = new Request.Builder().url(url).post(body).build();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("Host", host)
+                    .addHeader("Date", date)
+                    .addHeader("Authorization", authorization)
+                    .post(body)
+                    .build();
             Response response = null;
             try {
                 response = client.newCall(request).execute();
                 if (!response.isSuccessful() || response.body() == null) {
-                    logger.warn("讯飞OCR请求失败, code:{}", response == null ? -1 : response.code());
+                    logger.warn("讯飞OCR请求失败, code:{}, body:{}", response == null ? -1 : response.code(),
+                            response != null && response.body() != null ? response.body().string() : "");
                     return "";
                 }
                 JSONObject root = JSONObject.parseObject(response.body().string());
@@ -596,6 +634,16 @@ public class AiFileServiceImpl implements AiFileService {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         return sdf.format(new Date());
+    }
+
+    private String mergeParseError(String oldError, String newError) {
+        if (StringTools.isEmpty(newError)) {
+            return oldError;
+        }
+        if (StringTools.isEmpty(oldError)) {
+            return newError;
+        }
+        return oldError + "；" + newError;
     }
 
     private String hmacSha256Base64(String data, String secret) throws Exception {
