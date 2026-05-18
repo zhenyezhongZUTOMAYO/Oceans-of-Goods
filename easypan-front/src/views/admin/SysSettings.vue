@@ -32,6 +32,28 @@
           <template #suffix>MB</template>
         </el-input>
       </el-form-item>
+      <el-form-item label="AI模型" prop="aiModel">
+        <el-input
+          clearable
+          placeholder="例如: deepseek-v4-flash"
+          v-model="formData.aiModel"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="AI接口Key" prop="aiApiKey">
+        <el-input
+          clearable
+          show-password
+          placeholder="请输入AI接口Key"
+          v-model="formData.aiApiKey"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="启用AI" prop="aiEnable">
+        <el-switch
+          v-model="formData.aiEnable"
+          :active-value="1"
+          :inactive-value="0"
+        />
+      </el-form-item>
       <!-- 单选 -->
       <el-form-item label="" prop="">
         <el-button type="primary" @click="saveSettings">保存</el-button>
@@ -68,6 +90,7 @@ const rules = {
       message: "空间大小只能是数字",
     },
   ],
+  aiModel: [{ required: true, message: "请输入AI模型名称" }],
 };
 
 const getSysSettings = async () => {
@@ -78,6 +101,9 @@ const getSysSettings = async () => {
     return;
   }
   formData.value = result.data;
+  if (formData.value.aiEnable == undefined || formData.value.aiEnable == null) {
+    formData.value.aiEnable = 1;
+  }
 };
 getSysSettings();
 

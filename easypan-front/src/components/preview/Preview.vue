@@ -7,31 +7,56 @@
   <Window
     :show="windowShow"
     @close="closeWindow"
-    :width="fileInfo.fileCategory == 1 ? 1500 : 900"
+    :width="fileInfo.fileCategory == 1 ? 1500 : isAiPreviewFile ? 1200 : 900"
     :title="fileInfo.fileName"
     :align="fileInfo.fileCategory == 1 ? 'center' : 'top'"
     v-else
   >
-    <PreviewVideo :url="url" v-if="fileInfo.fileCategory == 1"></PreviewVideo>
-    <PreviewExcel :url="url" v-if="fileInfo.fileType == 6"></PreviewExcel>
-    <PreviewDoc :url="url" v-if="fileInfo.fileType == 5"></PreviewDoc>
-    <PreviewPdf :url="url" v-if="fileInfo.fileType == 4"></PreviewPdf>
-    <PreviewTxt
-      :url="url"
-      v-if="fileInfo.fileType == 7 || fileInfo.fileType == 8"
-    ></PreviewTxt>
-    <!--特殊预览-->
-    <PreviewMusic
-      :url="url"
-      :fileName="fileInfo.fileName"
-      v-if="fileInfo.fileCategory == 2"
-    ></PreviewMusic>
-    <PreviewDownload
-      :createDownloadUrl="createDownloadUrl"
-      :downloadUrl="downloadUrl"
-      :fileInfo="fileInfo"
-      v-if="fileInfo.fileCategory == 5 && fileInfo.fileType != 8"
-    ></PreviewDownload>
+    <div class="preview-body">
+      <div class="preview-main">
+        <PreviewVideo :url="url" v-if="fileInfo.fileCategory == 1"></PreviewVideo>
+        <PreviewExcel :url="url" v-if="fileInfo.fileType == 6"></PreviewExcel>
+        <PreviewDoc :url="url" v-if="fileInfo.fileType == 5"></PreviewDoc>
+        <PreviewPdf :url="url" v-if="fileInfo.fileType == 4"></PreviewPdf>
+        <PreviewTxt
+          :url="url"
+          v-if="fileInfo.fileType == 7 || fileInfo.fileType == 8"
+        ></PreviewTxt>
+        <!--特殊预览-->
+        <PreviewMusic
+          :url="url"
+          :fileName="fileInfo.fileName"
+          v-if="fileInfo.fileCategory == 2"
+        ></PreviewMusic>
+        <PreviewDownload
+          :createDownloadUrl="createDownloadUrl"
+          :downloadUrl="downloadUrl"
+          :fileInfo="fileInfo"
+          v-if="fileInfo.fileCategory == 5 && fileInfo.fileType != 8"
+        ></PreviewDownload>
+      </div>
+      <div class="ai-panel" v-if="isAiPreviewFile && showPartRef === 0">
+        <div class="panel-title">
+          <span>AI摘要</span>
+          <el-button link type="primary" @click="refreshAiIndex">重新解析</el-button>
+        </div>
+        <div class="panel-content">
+          <template v-if="aiSummaryLoading">加载中...</template>
+          <template v-else>
+            <div v-if="aiSummary.parseStatus === 0">AI正在解析中，请稍后刷新查看</div>
+            <div v-else-if="aiSummary.parseStatus === 1">
+              {{ aiSummary.parseError || "AI解析失败" }}
+            </div>
+            <template v-else>
+              <div class="summary-text">{{ aiSummary.summary || "暂无摘要" }}</div>
+              <div class="summary-tags" v-if="aiSummary.tags">
+                标签：{{ aiSummary.tags }}
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </div>
   </Window>
 </template>
 
@@ -58,9 +83,26 @@ const imageUrl = computed(() => {
 });
 
 const windowShow = ref(false);
+const showPartRef = ref(0);
 const closeWindow = () => {
   windowShow.value = false;
 };
+
+const api = {
+  getAiSummary: "/file/getAiSummary",
+  refreshAiIndex: "/file/refreshAiIndex",
+};
+
+const aiSummaryLoading = ref(false);
+const aiSummary = ref({});
+const isAiPreviewFile = computed(() => {
+  return (
+    fileInfo.value.fileType == 4 ||
+    fileInfo.value.fileType == 5 ||
+    fileInfo.value.fileType == 7 ||
+    fileInfo.value.fileType == 8
+  );
+});
 const FILE_URL_MAP = {
   0: {
     fileUrl: "/file/getFile",
@@ -90,6 +132,7 @@ const fileInfo = ref({});
 const imageViewerRef = ref();
 const showPreview = (data, showPart) => {
   fileInfo.value = data;
+  showPartRef.value = showPart;
   if (data.fileCategory == 3) {
     nextTick(() => {
       imageViewerRef.value.show(0);
@@ -118,10 +161,84 @@ const showPreview = (data, showPart) => {
     url.value = _url;
     createDownloadUrl.value = _createDownloadUrl;
     downloadUrl.value = _downloadUrl;
+    if (showPart == 0 && isAiPreviewFile.value) {
+      loadAiSummary();
+    }
   }
+};
+
+const loadAiSummary = async () => {
+  if (!fileInfo.value.fileId) {
+    return;
+  }
+  aiSummaryLoading.value = true;
+  let result = await proxy.Request({
+    url: api.getAiSummary,
+    params: {
+      fileId: fileInfo.value.fileId,
+    },
+    showLoading: false,
+  });
+  aiSummaryLoading.value = false;
+  if (!result) {
+    return;
+  }
+  aiSummary.value = result.data || {};
+};
+
+const refreshAiIndex = async () => {
+  let result = await proxy.Request({
+    url: api.refreshAiIndex,
+    params: {
+      fileId: fileInfo.value.fileId,
+    },
+  });
+  if (!result) {
+    return;
+  }
+  proxy.Message.success("已提交重新解析");
+  loadAiSummary();
 };
 defineExpose({ showPreview });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+.preview-body {
+  display: flex;
+  gap: 12px;
+}
+
+.preview-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-panel {
+  width: 280px;
+  border-left: 1px solid #ebeef5;
+  padding-left: 12px;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.panel-content {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.summary-text {
+  white-space: pre-wrap;
+}
+
+.summary-tags {
+  margin-top: 8px;
+  color: #909399;
+}
 </style>

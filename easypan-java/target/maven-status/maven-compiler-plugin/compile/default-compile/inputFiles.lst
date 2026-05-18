@@ -1,4 +1,6 @@
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\annotation\GlobalInterceptor.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\mappers\AiFileIndexMapper.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\service\impl\AiFileServiceImpl.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\enums\PageSize.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\FileInfoVO.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\controller\RecycleController.java
@@ -7,6 +9,7 @@ D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\spring\Ap
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\constants\Constants.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\FolderVO.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\query\BaseParam.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\service\AiFileService.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\UserSpaceDto.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\enums\UploadStatusEnums.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\enums\VerifyRegexEnum.java
@@ -26,10 +29,12 @@ D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\service\i
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\mappers\UserInfoMapper.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\CreateImageCode.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\QQInfoDto.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\AiSearchResultVO.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\po\EmailCode.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\controller\WebShareController.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\controller\CommonFileController.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\UserInfoVO.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\po\AiFileIndex.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\SysSettingsDto.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\service\FileInfoService.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\po\FileShare.java
@@ -37,6 +42,7 @@ D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\qu
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\query\FileShareQuery.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\ShareInfoVO.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\component\RedisUtils.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\mappers\AiFileChunkMapper.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\mappers\BaseMapper.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\config\RedisConfig.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\service\impl\EmailCodeServiceImpl.java
@@ -53,8 +59,10 @@ D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\qu
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\utils\ProcessUtils.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\enums\ResponseCodeEnum.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\SessionShareDto.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\vo\AiFileSummaryVO.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\component\RedisComponent.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\dto\SessionWebUserDto.java
+D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\po\AiFileChunk.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\task\FileCleanTask.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\entity\enums\DateTimePatternEnum.java
 D:\ReactProject\Oceans-of-Goods\easypan-java\src\main\java\com\easypan\InitRun.java

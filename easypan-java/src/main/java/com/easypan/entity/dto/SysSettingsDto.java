@@ -21,6 +21,21 @@ public class SysSettingsDto implements Serializable {
      */
     private Integer userInitUseSpace = 5;
 
+    /**
+     * AI 模型名称
+     */
+    private String aiModel = "deepseek-v4-flash";
+
+    /**
+     * AI 服务Key
+     */
+    private String aiApiKey = "";
+
+    /**
+     * 是否启用AI能力 0:关闭 1:开启
+     */
+    private Integer aiEnable = 1;
+
     public String getRegisterEmailTitle() {
         return registerEmailTitle;
     }
@@ -43,5 +58,29 @@ public class SysSettingsDto implements Serializable {
 
     public void setUserInitUseSpace(Integer userInitUseSpace) {
         this.userInitUseSpace = userInitUseSpace;
+    }
+
+    public String getAiModel() {
+        return aiModel;
+    }
+
+    public void setAiModel(String aiModel) {
+        this.aiModel = aiModel;
+    }
+
+    public String getAiApiKey() {
+        return aiApiKey;
+    }
+
+    public void setAiApiKey(String aiApiKey) {
+        this.aiApiKey = aiApiKey;
+    }
+
+    public Integer getAiEnable() {
+        return aiEnable;
+    }
+
+    public void setAiEnable(Integer aiEnable) {
+        this.aiEnable = aiEnable;
     }
 }

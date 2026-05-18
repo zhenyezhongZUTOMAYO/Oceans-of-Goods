@@ -102,3 +102,39 @@ CREATE TABLE `user_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户信息';
 
 INSERT INTO `user_info` VALUES ('3178033358', '测试账号', 'test@qq.com', null, null, '47ec2dd791e31e2ef2076caf64ed9b3d', null, '2023-04-28 13:54:01', '1', '238302835', '10737418240');
+
+-- ----------------------------
+-- Table structure for ai_file_index
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_file_index`;
+CREATE TABLE `ai_file_index` (
+  `file_id` varchar(10) NOT NULL COMMENT '文件ID',
+  `user_id` varchar(10) NOT NULL COMMENT '用户ID',
+  `parse_status` tinyint(1) DEFAULT '0' COMMENT '0:解析中 1:失败 2:成功',
+  `summary` text COMMENT '摘要',
+  `tags` varchar(500) DEFAULT NULL COMMENT '标签,逗号分隔',
+  `model_name` varchar(100) DEFAULT NULL COMMENT '模型名称',
+  `parse_error` varchar(500) DEFAULT NULL COMMENT '失败原因',
+  `chunk_count` int(11) DEFAULT '0' COMMENT '分块数量',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `last_update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`file_id`,`user_id`),
+  KEY `idx_ai_user` (`user_id`),
+  KEY `idx_ai_status` (`parse_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI文件索引';
+
+-- ----------------------------
+-- Table structure for ai_file_chunk
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_file_chunk`;
+CREATE TABLE `ai_file_chunk` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `file_id` varchar(10) NOT NULL COMMENT '文件ID',
+  `user_id` varchar(10) NOT NULL COMMENT '用户ID',
+  `chunk_index` int(11) DEFAULT NULL COMMENT '分块顺序',
+  `chunk_text` mediumtext COMMENT '分块内容',
+  `keywords` varchar(500) DEFAULT NULL COMMENT '关键词',
+  PRIMARY KEY (`id`),
+  KEY `idx_chunk_user` (`user_id`),
+  KEY `idx_chunk_file` (`file_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI分块索引';

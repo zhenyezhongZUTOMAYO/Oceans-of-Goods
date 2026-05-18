@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easypan.mappers.AiFileIndexMapper">
+
+    <resultMap id="base_result_map" type="com.easypan.entity.po.AiFileIndex">
+        <result column="file_id" property="fileId"/>
+        <result column="user_id" property="userId"/>
+        <result column="parse_status" property="parseStatus"/>
+        <result column="summary" property="summary"/>
+        <result column="tags" property="tags"/>
+        <result column="model_name" property="modelName"/>
+        <result column="parse_error" property="parseError"/>
+        <result column="chunk_count" property="chunkCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="last_update_time" property="lastUpdateTime"/>
+    </resultMap>
+
+    <sql id="base_column_list">
+        file_id,user_id,parse_status,summary,tags,
+        model_name,parse_error,chunk_count,create_time,last_update_time
+    </sql>
+
+    <insert id="insertOrUpdate" parameterType="com.easypan.entity.po.AiFileIndex">
+        INSERT INTO ai_file_index (
+        file_id,user_id,parse_status,summary,tags,model_name,
+        parse_error,chunk_count,create_time,last_update_time
+        ) VALUES (
+        #{bean.fileId},#{bean.userId},#{bean.parseStatus},#{bean.summary},#{bean.tags},#{bean.modelName},
+        #{bean.parseError},#{bean.chunkCount},#{bean.createTime},#{bean.lastUpdateTime}
+        )
+        ON DUPLICATE KEY UPDATE
+        parse_status = VALUES(parse_status),
+        summary = VALUES(summary),
+        tags = VALUES(tags),
+        model_name = VALUES(model_name),
+        parse_error = VALUES(parse_error),
+        chunk_count = VALUES(chunk_count),
+        last_update_time = VALUES(last_update_time)
+    </insert>
+
+    <select id="selectByFileIdAndUserId" resultMap="base_result_map">
+        SELECT <include refid="base_column_list"/>
+        FROM ai_file_index
+        WHERE file_id = #{fileId} AND user_id = #{userId}
+    </select>
+
+    <update id="updateByFileIdAndUserId" parameterType="com.easypan.entity.po.AiFileIndex">
+        UPDATE ai_file_index
+        <set>
+            <if test="bean.parseStatus != null">
+                parse_status = #{bean.parseStatus},
+            </if>
+            <if test="bean.summary != null">
+                summary = #{bean.summary},
+            </if>
+            <if test="bean.tags != null">
+                tags = #{bean.tags},
+            </if>
+            <if test="bean.modelName != null">
+                model_name = #{bean.modelName},
+            </if>
+            <if test="bean.parseError != null">
+                parse_error = #{bean.parseError},
+            </if>
+            <if test="bean.chunkCount != null">
+                chunk_count = #{bean.chunkCount},
+            </if>
+            <if test="bean.lastUpdateTime != null">
+                last_update_time = #{bean.lastUpdateTime},
+            </if>
+        </set>
+        WHERE file_id = #{fileId} AND user_id = #{userId}
+    </update>
+
+    <select id="selectByUserId" resultMap="base_result_map">
+        SELECT <include refid="base_column_list"/>
+        FROM ai_file_index
+        WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteByFileIdAndUserId">
+        DELETE FROM ai_file_index
+        WHERE file_id = #{fileId} AND user_id = #{userId}
+    </delete>
+</mapper>

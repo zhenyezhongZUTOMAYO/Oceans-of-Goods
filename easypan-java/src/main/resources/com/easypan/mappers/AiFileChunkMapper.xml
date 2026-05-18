@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easypan.mappers.AiFileChunkMapper">
+
+    <resultMap id="base_result_map" type="com.easypan.entity.po.AiFileChunk">
+        <result column="id" property="id"/>
+        <result column="file_id" property="fileId"/>
+        <result column="user_id" property="userId"/>
+        <result column="chunk_index" property="chunkIndex"/>
+        <result column="chunk_text" property="chunkText"/>
+        <result column="keywords" property="keywords"/>
+    </resultMap>
+
+    <insert id="insertBatch" parameterType="com.easypan.entity.po.AiFileChunk">
+        INSERT INTO ai_file_chunk (
+        file_id,user_id,chunk_index,chunk_text,keywords
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.fileId},#{item.userId},#{item.chunkIndex},#{item.chunkText},#{item.keywords}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByFileIdAndUserId">
+        DELETE FROM ai_file_chunk
+        WHERE file_id = #{fileId} AND user_id = #{userId}
+    </delete>
+
+    <select id="selectByUserId" resultMap="base_result_map">
+        SELECT id,file_id,user_id,chunk_index,chunk_text,keywords
+        FROM ai_file_chunk
+        WHERE user_id = #{userId}
+    </select>
+</mapper>

@@ -10,6 +10,7 @@ import com.easypan.entity.query.FileInfoQuery;
 import com.easypan.entity.query.UserInfoQuery;
 import com.easypan.mappers.FileInfoMapper;
 import com.easypan.mappers.UserInfoMapper;
+import com.easypan.utils.StringTools;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -36,6 +37,16 @@ public class RedisComponent {
         if (sysSettingsDto == null) {
             sysSettingsDto = new SysSettingsDto();
             redisUtils.set(Constants.REDIS_KEY_SYS_SETTING, sysSettingsDto);
+            return sysSettingsDto;
+        }
+        if (StringTools.isEmpty(sysSettingsDto.getAiModel())) {
+            sysSettingsDto.setAiModel("deepseek-v4-flash");
+        }
+        if (StringTools.isEmpty(sysSettingsDto.getAiApiKey())) {
+            sysSettingsDto.setAiApiKey("");
+        }
+        if (sysSettingsDto.getAiEnable() == null) {
+            sysSettingsDto.setAiEnable(1);
         }
         return sysSettingsDto;
     }

@@ -45,11 +45,23 @@ public class AdminController extends CommonFileController {
     public ResponseVO saveSysSettings(
             @VerifyParam(required = true) String registerEmailTitle,
             @VerifyParam(required = true) String registerEmailContent,
-            @VerifyParam(required = true) Integer userInitUseSpace) {
-        SysSettingsDto sysSettingsDto = new SysSettingsDto();
+            @VerifyParam(required = true) Integer userInitUseSpace,
+            String aiModel,
+            String aiApiKey,
+            Integer aiEnable) {
+        SysSettingsDto sysSettingsDto = redisComponent.getSysSettingsDto();
         sysSettingsDto.setRegisterEmailTitle(registerEmailTitle);
         sysSettingsDto.setRegisterEmailContent(registerEmailContent);
         sysSettingsDto.setUserInitUseSpace(userInitUseSpace);
+        if (aiModel != null) {
+            sysSettingsDto.setAiModel(aiModel);
+        }
+        if (aiApiKey != null) {
+            sysSettingsDto.setAiApiKey(aiApiKey);
+        }
+        if (aiEnable != null) {
+            sysSettingsDto.setAiEnable(aiEnable);
+        }
         redisComponent.saveSysSettingsDto(sysSettingsDto);
         return getSuccessResponseVO(null);
     }

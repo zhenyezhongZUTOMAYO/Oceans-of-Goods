@@ -9,9 +9,12 @@ import com.easypan.entity.enums.FileDelFlagEnums;
 import com.easypan.entity.enums.FileFolderTypeEnums;
 import com.easypan.entity.po.FileInfo;
 import com.easypan.entity.query.FileInfoQuery;
+import com.easypan.entity.vo.AiFileSummaryVO;
+import com.easypan.entity.vo.AiSearchResultVO;
 import com.easypan.entity.vo.FileInfoVO;
 import com.easypan.entity.vo.PaginationResultVO;
 import com.easypan.entity.vo.ResponseVO;
+import com.easypan.service.AiFileService;
 import com.easypan.utils.CopyTools;
 import com.easypan.utils.StringTools;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -30,6 +34,9 @@ import java.util.List;
 @RestController("fileInfoController")
 @RequestMapping("/file")
 public class FileInfoController extends CommonFileController {
+
+    @Resource
+    private AiFileService aiFileService;
 
     /**
      * 根据条件分页查询
@@ -153,6 +160,33 @@ public class FileInfoController extends CommonFileController {
     public ResponseVO delFile(HttpSession session, @VerifyParam(required = true) String fileIds) {
         SessionWebUserDto webUserDto = getUserInfoFromSession(session);
         fileInfoService.removeFile2RecycleBatch(webUserDto.getUserId(), fileIds);
+        return getSuccessResponseVO(null);
+    }
+
+    @RequestMapping("/getAiSummary")
+    @GlobalInterceptor(checkParams = true)
+    public ResponseVO getAiSummary(HttpSession session, @VerifyParam(required = true) String fileId) {
+        SessionWebUserDto webUserDto = getUserInfoFromSession(session);
+        AiFileSummaryVO summaryVO = aiFileService.getAiSummary(fileId, webUserDto.getUserId());
+        return getSuccessResponseVO(summaryVO);
+    }
+
+    @RequestMapping("/aiSearch")
+    @GlobalInterceptor(checkParams = true)
+    public ResponseVO aiSearch(HttpSession session,
+                               @VerifyParam(required = true) String keyword,
+                               Integer pageNo,
+                               Integer pageSize) {
+        SessionWebUserDto webUserDto = getUserInfoFromSession(session);
+        PaginationResultVO<AiSearchResultVO> resultVO = aiFileService.search(webUserDto.getUserId(), keyword, pageNo, pageSize);
+        return getSuccessResponseVO(resultVO);
+    }
+
+    @RequestMapping("/refreshAiIndex")
+    @GlobalInterceptor(checkParams = true)
+    public ResponseVO refreshAiIndex(HttpSession session, @VerifyParam(required = true) String fileId) {
+        SessionWebUserDto webUserDto = getUserInfoFromSession(session);
+        aiFileService.asyncParseFile(fileId, webUserDto.getUserId());
         return getSuccessResponseVO(null);
     }
 }

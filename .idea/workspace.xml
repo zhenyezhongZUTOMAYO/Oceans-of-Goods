@@ -1,4 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PropertiesComponent">{}</component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8dd774ac-a68c-4e04-b986-511eb442c339" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/easypan-java/files/logs/easypan.log" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/files/logs/easypan.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/AiFileServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/AiFileServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/FileInfoServiceImpl$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/FileInfoServiceImpl$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/FileInfoServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/service/impl/FileInfoServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/task/FileCleanTask.class" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/target/classes/com/easypan/task/FileCleanTask.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/easypan-java/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/easypan-java/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="6ON5vJMS" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="3DsW132oC2TMaG4gJnu6f26T3jR" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "git-widget-placeholder": "main",
+    "go.import.settings.migrated": "true",
+    "last_opened_file_path": "D:/ReactProject/Oceans-of-Goods",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-IU-251.25410.129" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="8dd774ac-a68c-4e04-b986-511eb442c339" name="更改" comment="" />
+      <created>1779071038860</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779071038860</updated>
+      <workItem from="1779071039905" duration="15000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+    <option name="exactExcludedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/easypan-front/vite.config.js" />
+        <option value="$PROJECT_DIR$/easypan-front/src/main.js" />
+      </list>
+    </option>
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
 </project>

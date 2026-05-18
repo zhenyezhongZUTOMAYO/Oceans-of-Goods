@@ -37,9 +37,17 @@
           批量移动
         </el-button>
         <div class="search-panel">
+          <div class="search-mode">
+            <el-switch
+              v-model="aiSearch"
+              :active-value="true"
+              :inactive-value="false"
+            />
+            <span class="mode-text">AI搜索</span>
+          </div>
           <el-input
             clearable
-            placeholder="输入文件名搜索"
+            :placeholder="aiSearch ? '请输入自然语言问题' : '输入文件名搜索'"
             v-model="fileNameFuzzy"
             @keyup.enter="search"
           >
@@ -86,6 +94,12 @@
                 >转码失败</span
               >
             </span>
+            <div class="ai-snippet" v-if="!row.showEdit && row.snippet">
+              {{ row.snippet }}
+            </div>
+            <div class="ai-tags" v-if="!row.showEdit && row.tags">
+              标签：{{ row.tags }}
+            </div>
             <div class="edit-panel" v-if="row.showEdit">
               <el-input
                 v-model.trim="row.fileNameReal"
@@ -202,6 +216,7 @@ const currentFolder = ref({ fileId: 0 });
 
 const api = {
   loadDataList: "/file/loadDataList",
+  aiSearch: "/file/aiSearch",
   rename: "/file/rename",
   newFoloder: "/file/newFoloder",
   getFolderInfo: "/file/getFolderInfo",
@@ -248,10 +263,28 @@ const tableOptions = {
 };
 
 const fileNameFuzzy = ref();
+const aiSearch = ref(false);
 const showLoading = ref(true);
 const category = ref();
 
 const loadDataList = async () => {
+  if (aiSearch.value && fileNameFuzzy.value) {
+    let aiResult = await proxy.Request({
+      url: api.aiSearch,
+      showLoading: showLoading,
+      params: {
+        pageNo: tableData.value.pageNo,
+        pageSize: tableData.value.pageSize,
+        keyword: fileNameFuzzy.value,
+      },
+    });
+    if (!aiResult) {
+      return;
+    }
+    tableData.value = aiResult.data;
+    editing.value = false;
+    return;
+  }
   let params = {
     pageNo: tableData.value.pageNo,
     pageSize: tableData.value.pageSize,
@@ -519,4 +552,32 @@ const share = (row) => {
 
 <style lang="scss" scoped>
 @import "@/assets/file.list.scss";
+
+.search-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ai-snippet {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.ai-tags {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #909399;
+}
 </style>
