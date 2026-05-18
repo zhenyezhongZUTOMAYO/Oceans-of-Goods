@@ -494,7 +494,8 @@ public class AiFileServiceImpl implements AiFileService {
             return "";
         }
         try {
-            logger.info("讯飞OCR开始请求, file:{}, appId:{}", file.getName(), appId);
+            logger.info("讯飞OCR开始请求, file:{}, appId:{}, apiKeyMasked:{}, apiKeyLen:{}",
+                    file.getName(), appId, maskSecret(apiKey), apiKey.length());
             URI uri = URI.create(ocrUrl);
             String host = uri.getHost();
             String path = uri.getRawPath();
@@ -658,6 +659,14 @@ public class AiFileServiceImpl implements AiFileService {
         mac.init(secretKeySpec);
         byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(digest);
+    }
+
+    private String maskSecret(String secret) {
+        String value = StringUtils.trimToEmpty(secret);
+        if (value.length() <= 10) {
+            return "****";
+        }
+        return value.substring(0, 6) + "****" + value.substring(value.length() - 4);
     }
 
     private List<String> splitChunks(String content) {
