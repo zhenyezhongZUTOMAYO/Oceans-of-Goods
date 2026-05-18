@@ -225,15 +225,20 @@ public class AiFileServiceImpl implements AiFileService {
     @Transactional(rollbackFor = Exception.class)
     protected void parseFile(String fileId, String userId) throws Exception {
         if (isAiDisabled()) {
+            logger.info("AI解析跳过: aiEnable=0, fileId:{}, userId:{}", fileId, userId);
             return;
         }
         FileInfo fileInfo = fileInfoMapper.selectByFileIdAndUserId(fileId, userId);
         if (fileInfo == null || !FileDelFlagEnums.USING.getFlag().equals(fileInfo.getDelFlag())) {
+            logger.info("AI解析跳过: 文件不存在或已删除, fileId:{}, userId:{}", fileId, userId);
             return;
         }
         if (!isSupportedDocType(fileInfo.getFileType())) {
+            logger.info("AI解析跳过: 不支持的文件类型, fileId:{}, fileType:{}, fileName:{}",
+                    fileId, fileInfo.getFileType(), fileInfo.getFileName());
             return;
         }
+        logger.info("AI解析开始, fileId:{}, fileName:{}, fileType:{}", fileId, fileInfo.getFileName(), fileInfo.getFileType());
         Date now = new Date();
         SysSettingsDto settings = redisComponent.getSysSettingsDto();
         AiFileIndex processing = new AiFileIndex();
@@ -489,6 +494,7 @@ public class AiFileServiceImpl implements AiFileService {
             return "";
         }
         try {
+            logger.info("讯飞OCR开始请求, file:{}, appId:{}", file.getName(), appId);
             URI uri = URI.create(ocrUrl);
             String host = uri.getHost();
             String path = uri.getRawPath();
@@ -573,7 +579,9 @@ public class AiFileServiceImpl implements AiFileService {
                     return "";
                 }
                 String decodedText = new String(Base64.getDecoder().decode(textBase64), StandardCharsets.UTF_8);
-                return extractOcrText(decodedText);
+                String ocrText = extractOcrText(decodedText);
+                logger.info("讯飞OCR请求成功, file:{}, textLen:{}", file.getName(), ocrText.length());
+                return ocrText;
             } finally {
                 if (response != null && response.body() != null) {
                     response.body().close();
